@@ -34,7 +34,7 @@ func NewHeapTimer(num int) (h *HeapTimer) {
 
 // 初始化
 func (h *HeapTimer) Init(num int) {
-	h.Init(num)
+	h.init(num)
 }
 
 func (h *HeapTimer) init(num int) {
@@ -87,12 +87,12 @@ func (h *HeapTimer) expire() {
 
 func (h *HeapTimer) grow() {
 	// 预申请空闲指针变量
-	tds := make([]*TimerData, h.num)
-	h.free = tds[0]
+	tds := make([]TimerData, h.num)
+	h.free = &tds[0]
 
 	td := h.free
 	for i := 1; i < h.num; i++ {
-		td.next = tds[i]
+		td.next = &tds[i]
 		td = td.next
 	}
 	td.next = nil
