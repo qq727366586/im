@@ -1,4 +1,4 @@
-package util_retry
+package retry
 
 import (
 	"context"

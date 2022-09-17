@@ -17,7 +17,7 @@ func (w *Writer) Len() int {
 }
 
 func (w *Writer) Size() int {
-	return len(w.buf)
+	return cap(w.buf)
 }
 
 func (w *Writer) Reset() {

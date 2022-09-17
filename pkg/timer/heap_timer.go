@@ -1,4 +1,4 @@
-package time
+package timer
 
 import (
 	"sync"
@@ -9,20 +9,20 @@ const (
 	infiniteDuration = time.Duration(1<<63 - 1)
 )
 
-type TimerData struct {
-	key    string     // channel 对应的唯一key
-	expire time.Time  // 过期时间
-	fn     func()     // 回调函数
-	index  int        // 堆的索引
-	next   *TimerData // 下一个节点
+type TimersData struct {
+	key    string      // channel 对应的唯一key
+	expire time.Time   // 过期时间
+	fn     func()      // 回调函数
+	index  int         // 堆的索引
+	next   *TimersData // 下一个节点
 }
 
 type HeapTimer struct {
 	lock   sync.Mutex
-	free   *TimerData   // 空闲链表
-	timers []*TimerData // 初始化的容量
-	signal *time.Timer  // 信号
-	num    int          // 数量
+	free   *TimersData   // 空闲链表
+	timers []*TimersData // 初始化的容量
+	signal *time.Timer   // 信号
+	num    int           // 数量
 }
 
 // 初始化
@@ -38,7 +38,7 @@ func (h *HeapTimer) Init(num int) {
 }
 
 func (h *HeapTimer) init(num int) {
-	h.timers = make([]*TimerData, 0, num)
+	h.timers = make([]*TimersData, 0, num)
 	h.signal = time.NewTimer(infiniteDuration)
 	h.num = num
 	go h.start()
@@ -56,7 +56,7 @@ func (h *HeapTimer) start() {
 func (h *HeapTimer) expire() {
 	var (
 		d  time.Duration
-		td *TimerData
+		td *TimersData
 		fn func()
 	)
 	h.lock.Lock()
@@ -87,7 +87,7 @@ func (h *HeapTimer) expire() {
 
 func (h *HeapTimer) grow() {
 	// 预申请空闲指针变量
-	tds := make([]TimerData, h.num)
+	tds := make([]TimersData, h.num)
 	h.free = &tds[0]
 
 	td := h.free
@@ -99,7 +99,7 @@ func (h *HeapTimer) grow() {
 }
 
 // 添加计时器 log(n)
-func (h *HeapTimer) Add(expire time.Duration, fn func()) (td *TimerData) {
+func (h *HeapTimer) Add(expire time.Duration, fn func()) (td *TimersData) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	td = h.get()
@@ -110,7 +110,7 @@ func (h *HeapTimer) Add(expire time.Duration, fn func()) (td *TimerData) {
 }
 
 // 删除计时器 log(n)
-func (h *HeapTimer) Del(td *TimerData) {
+func (h *HeapTimer) Del(td *TimersData) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	h.del(td)
@@ -118,7 +118,7 @@ func (h *HeapTimer) Del(td *TimerData) {
 }
 
 // 更新计时器 log(n)
-func (h *HeapTimer) Set(td *TimerData, expire time.Duration) {
+func (h *HeapTimer) Set(td *TimersData, expire time.Duration) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	h.del(td)
@@ -126,7 +126,7 @@ func (h *HeapTimer) Set(td *TimerData, expire time.Duration) {
 	h.add(td)
 }
 
-func (h *HeapTimer) get() (td *TimerData) {
+func (h *HeapTimer) get() (td *TimersData) {
 	if td = h.free; td == nil {
 		h.grow()
 		td = h.free
@@ -135,14 +135,14 @@ func (h *HeapTimer) get() (td *TimerData) {
 	return
 }
 
-func (h *HeapTimer) put(td *TimerData) {
+func (h *HeapTimer) put(td *TimersData) {
 	td.fn = nil
 	// 放入头部
 	td.next = h.free
 	h.free = td
 }
 
-func (h *HeapTimer) del(td *TimerData) {
+func (h *HeapTimer) del(td *TimersData) {
 	i := td.index
 	last := len(h.timers) - 1
 	// 先判断是否可能已经过期 早就被移除了
@@ -159,7 +159,7 @@ func (h *HeapTimer) del(td *TimerData) {
 	h.timers = h.timers[:last]
 }
 
-func (h *HeapTimer) add(td *TimerData) {
+func (h *HeapTimer) add(td *TimersData) {
 	td.index = len(h.timers)
 	h.timers = append(h.timers, td)
 	h.up(td.index)
@@ -170,8 +170,8 @@ func (h *HeapTimer) add(td *TimerData) {
 	}
 }
 
-// t.Sub(time.Now()) 的快捷方式
-func (td *TimerData) Delay() time.Duration {
+// t.Sub(timer.Now()) 的快捷方式
+func (td *TimersData) Delay() time.Duration {
 	return time.Until(td.expire)
 }
 

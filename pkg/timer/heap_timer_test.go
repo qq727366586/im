@@ -1,6 +1,7 @@
-package time
+package timer
 
 import (
+	"im/constant/str"
 	"log"
 	"testing"
 	"time"
@@ -8,7 +9,7 @@ import (
 
 func TestTimer(t *testing.T) {
 	timer := NewHeapTimer(100)
-	tds := make([]*TimerData, 100)
+	tds := make([]*TimersData, 100)
 	for i := 0; i < 100; i++ {
 		tds[i] = timer.Add(time.Duration(i)*time.Second+5*time.Minute, nil)
 	}
@@ -36,10 +37,8 @@ func printTimer(timer *HeapTimer) {
 	log.Printf("----------timers: %d ----------", len(timer.timers))
 	log.Println()
 	for i := 0; i < len(timer.timers); i++ {
-
-		log.Printf("timer: %s, %s, index: %d", timer.timers[i].key, timer.timers[i].expire.Format("2006-01-02 15:03:04"), timer.timers[i].index)
+		log.Printf("timer: %s, %s, index: %d", timer.timers[i].key, timer.timers[i].expire.Format(str.TimeLayOutYmdHms), timer.timers[i].index)
 		log.Println()
-
 	}
 	log.Printf("--------------------")
 	log.Println()
